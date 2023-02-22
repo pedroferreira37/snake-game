@@ -1,7 +1,7 @@
 # snake_game
 Justy playing with functional programming
 
-##Next Features: 
+## Next Features: 
 
-#Make appear food randomly
-#Make walk faster and randomly
+# Make appear food randomly
+# Make walk faster and randomly
