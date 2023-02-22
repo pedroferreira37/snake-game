@@ -6,8 +6,22 @@ const grid = {
   COLS: 40,
 };
 
-let snakeCoords = getInitialCoordsSnake();
+function getInitialCoordsSnake() {
+  return [
+    [0, 5],
+    [0, 4],
+    [0, 3],
+    [0, 2],
+    [0, 1],
+  ];
+}
+
 const coordinates = new Map();
+const snakeCoords = getInitialCoordsSnake();
+const moveRight = ([t, l]) => [t, l + 1];
+const moveLeft = ([t, l]) => [t, l - 1];
+const moveDown = ([t, l]) => [t + 1, l];
+const moveUp = ([t, l]) => [t - 1, l];
 
 function createDiv() {
   return document.createElement("div");
@@ -31,6 +45,7 @@ function drawGame() {
   for (let i = 0; i < grid.ROWS; i++) {
     for (let j = 0; j < grid.COLS; j++) {
       const cell = createCell(i, j);
+      cell.style.background = "white";
       container.appendChild(cell);
       const cellPosition = retrivePosition(i, j);
       coordinates.set(cellPosition, cell);
@@ -39,37 +54,58 @@ function drawGame() {
 }
 
 function drawSnake(coords) {
-  console.log(coords);
+  const uniqueSnakePosition = new Set();
   for (const [x, y] of coords) {
     const cellPosition = retrivePosition(x, y);
-    const cell = coordinates.get(cellPosition);
-    cell.style.background = "yellow";
+    uniqueSnakePosition.add(cellPosition);
   }
+
+  coordinates.forEach((cell, position) => {
+    if (uniqueSnakePosition.has(position)) {
+      cell.style.background = "yellow";
+    } else {
+      cell.style.background = "white";
+    }
+  });
 }
 
-const moveRight = ([t, l]) => [t, l + 1];
+function moveSnake(newHeadPosition) {
+  snakeCoords.unshift(newHeadPosition);
+  snakeCoords.pop();
+}
 
-window.addEventListener("keydown", (e) => {
-  e.preventDefault();
-  switch (e.key) {
-    case "ArrowLeft":
-    case "A":
-    case "a":
-      snakeCoords = snakeCoords.map(moveRight);
-      drawSnake();
-      break;
-  }
+const snakeAction = {
+  ArrowRight() {
+    const newHeadPosition = snakeCoords[0];
+    const right = moveRight(newHeadPosition);
+    moveSnake(right);
+    drawSnake(snakeCoords);
+  },
+  ArrowLeft() {
+    const newHeadPosition = snakeCoords[0];
+    const left = moveLeft(newHeadPosition);
+    moveSnake(left);
+    drawSnake(snakeCoords);
+  },
+  ArrowDown() {
+    const newHeadPosition = snakeCoords[0];
+    const down = moveDown(newHeadPosition);
+    moveSnake(down);
+    drawSnake(snakeCoords);
+  },
+  ArrowUp() {
+    const newHeadPosition = snakeCoords[0];
+    const up = moveUp(newHeadPosition);
+    moveSnake(up);
+    drawSnake(snakeCoords);
+  },
+};
+
+window.addEventListener("keydown", (event) => {
+  event.preventDefault();
+  const { key: keyPressed } = event;
+  if (snakeAction.hasOwnProperty(keyPressed)) snakeAction[keyPressed]();
 });
-
-function getInitialCoordsSnake() {
-  return [
-    [0, 1],
-    [0, 2],
-    [0, 3],
-    [0, 4],
-    [0, 5],
-  ];
-}
 
 function initGame() {
   drawGame();
