@@ -17,8 +17,14 @@ function getInitialCoordsSnake() {
 }
 
 const coordinates = new Map();
-const snakeCoords = getInitialCoordsSnake();
-const moveRight = ([t, l]) => [t, l + 1];
+let snakeCoords = getInitialCoordsSnake();
+const moveRight = ([t, l]) => {
+  const coords = [t, l + 1];
+  if (coords[1] > grid.COLS) {
+    coords[1] = 2;
+  }
+  return coords;
+};
 const moveLeft = ([t, l]) => [t, l - 1];
 const moveDown = ([t, l]) => [t + 1, l];
 const moveUp = ([t, l]) => [t - 1, l];
@@ -74,38 +80,37 @@ function moveSnake(newHeadPosition) {
   snakeCoords.pop();
 }
 
-const snakeAction = {
-  ArrowRight() {
-    const newHeadPosition = snakeCoords[0];
-    const right = moveRight(newHeadPosition);
-    moveSnake(right);
-    drawSnake(snakeCoords);
-  },
-  ArrowLeft() {
-    const newHeadPosition = snakeCoords[0];
-    const left = moveLeft(newHeadPosition);
-    moveSnake(left);
-    drawSnake(snakeCoords);
-  },
-  ArrowDown() {
-    const newHeadPosition = snakeCoords[0];
-    const down = moveDown(newHeadPosition);
-    moveSnake(down);
-    drawSnake(snakeCoords);
-  },
-  ArrowUp() {
-    const newHeadPosition = snakeCoords[0];
-    const up = moveUp(newHeadPosition);
-    moveSnake(up);
-    drawSnake(snakeCoords);
-  },
-};
-
+let nextDirection = "ArrowRight";
 window.addEventListener("keydown", (event) => {
   event.preventDefault();
   const { key: keyPressed } = event;
-  if (snakeAction.hasOwnProperty(keyPressed)) snakeAction[keyPressed]();
+  nextDirection = keyPressed;
 });
+
+setInterval(() => {
+  var newHeadPosition = snakeCoords[0];
+  var nextMove;
+
+  switch (nextDirection) {
+    case "ArrowRight":
+      nextMove = moveRight(newHeadPosition);
+      break;
+    case "ArrowLeft":
+      nextMove = moveLeft(newHeadPosition);
+      break;
+    case "ArrowDown":
+      nextMove = moveDown(newHeadPosition);
+      break;
+    case "ArrowUp":
+      nextMove = moveUp(newHeadPosition);
+      break;
+    default:
+      nextMove = moveRight(newHeadPosition);
+  }
+
+  moveSnake(nextMove);
+  drawSnake(snakeCoords);
+}, 100);
 
 function initGame() {
   drawGame();
