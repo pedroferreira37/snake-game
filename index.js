@@ -1,10 +1,15 @@
 const container = document.getElementById("snake");
 
 const PIXEL_SIZE = 12;
+let SNAKE_SPEED = 100;
 const grid = {
   ROWS: 40,
   COLS: 40,
 };
+
+function removeKeyListener() {
+  window.removeEventListener("keydown", handleKeyPressed);
+}
 
 function getInitialCoordsSnake() {
   return [
@@ -17,17 +22,41 @@ function getInitialCoordsSnake() {
 }
 
 const coordinates = new Map();
-let snakeCoords = getInitialCoordsSnake();
+let snakeCoords = [];
+let foodCoords = [];
 const moveRight = ([t, l]) => {
   const coords = [t, l + 1];
-  if (coords[1] > grid.COLS) {
-    coords[1] = 2;
+  if (coords[1] >= grid.COLS) {
+    coords[1] = grid.COLS - 5;
+    removeKeyListener();
   }
   return coords;
 };
-const moveLeft = ([t, l]) => [t, l - 1];
-const moveDown = ([t, l]) => [t + 1, l];
-const moveUp = ([t, l]) => [t - 1, l];
+const moveLeft = ([t, l]) => {
+  const coords = [t, l - 1];
+  if (coords[1] < 0) {
+    coords[1] = 4;
+    removeKeyListener();
+  }
+  return coords;
+};
+const moveDown = ([t, l]) => {
+  const coords = [t + 1, l];
+  if (coords[0] > grid.ROWS) {
+    coords[0] = grid.ROWS - 4;
+    removeKeyListener();
+  }
+  return coords;
+};
+const moveUp = ([t, l]) => {
+  const coords = [t - 1, l];
+  console.log(l);
+  if (coords[0] < 0) {
+    coords[0] = 4;
+    removeKeyListener();
+  }
+  return coords;
+};
 
 function createDiv() {
   return document.createElement("div");
@@ -80,12 +109,33 @@ function moveSnake(newHeadPosition) {
   snakeCoords.pop();
 }
 
-let nextDirection = "ArrowRight";
-window.addEventListener("keydown", (event) => {
+function handleKeyPressed(event) {
   event.preventDefault();
   const { key: keyPressed } = event;
   nextDirection = keyPressed;
-});
+}
+
+function generateSnakeFood() {
+  let f_x, f_y;
+  const coords = retrivePosition(f_x, f_y);
+
+  do {
+    f_x = Math.floor(Math.random() * grid.ROWS);
+    f_y = Math.floor(Math.random() * grid.COLS);
+  } while (coordinates.has(coords));
+
+  const foodPosition = retrivePosition(f_x, f_y);
+  const cell = createCell(f_x, f_y);
+  cell.style.background = "green";
+  container.appendChild(cell);
+  coordinates.set(foodPosition, cell);
+
+  const [h_x, h_y] = snakeCoords[0];
+  if (h_x === f_x && h_y === f_x) snakeCoords.unshift([f_x, f_y]);
+}
+
+let nextDirection = "ArrowRight";
+window.addEventListener("keydown", handleKeyPressed);
 
 setInterval(() => {
   var newHeadPosition = snakeCoords[0];
@@ -110,11 +160,17 @@ setInterval(() => {
 
   moveSnake(nextMove);
   drawSnake(snakeCoords);
-}, 100);
+}, SNAKE_SPEED);
+
+setInterval(() => {
+  generateSnakeFood();
+}, 1000);
 
 function initGame() {
+  snakeCoords = getInitialCoordsSnake();
   drawGame();
   drawSnake(snakeCoords);
+  generateSnakeFood();
 }
 
 function retrivePosition(i, j) {
