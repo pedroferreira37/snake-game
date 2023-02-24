@@ -105,33 +105,36 @@ function drawSnake(coords) {
 }
 
 function moveSnake(newHeadPosition) {
-  snakeCoords.unshift(newHeadPosition);
-  snakeCoords.pop();
+  const [f_x, f_y, cell] = foodCoords[0];
+  const [s_x, s_y] = newHeadPosition;
+  if (s_x === f_x && s_y === f_y) {
+    snakeCoords.unshift([f_x, f_y]);
+    cell.remove();
+    foodCoords = [];
+    generateSnakeFood();
+  } else {
+    snakeCoords.unshift(newHeadPosition);
+    snakeCoords.pop();
+  }
+}
+function generateSnakeFood() {
+  let f_x, f_y;
+
+  f_x = Math.floor(Math.random() * grid.ROWS);
+  f_y = Math.floor(Math.random() * grid.COLS);
+
+  const cell = createCell(f_x, f_y);
+  cell.style.background = "green";
+  container.appendChild(cell);
+
+  console.log(cell);
+  foodCoords.push([f_x, f_y, cell]);
 }
 
 function handleKeyPressed(event) {
   event.preventDefault();
   const { key: keyPressed } = event;
   nextDirection = keyPressed;
-}
-
-function generateSnakeFood() {
-  let f_x, f_y;
-  const coords = retrivePosition(f_x, f_y);
-
-  do {
-    f_x = Math.floor(Math.random() * grid.ROWS);
-    f_y = Math.floor(Math.random() * grid.COLS);
-  } while (coordinates.has(coords));
-
-  const foodPosition = retrivePosition(f_x, f_y);
-  const cell = createCell(f_x, f_y);
-  cell.style.background = "green";
-  container.appendChild(cell);
-  coordinates.set(foodPosition, cell);
-
-  const [h_x, h_y] = snakeCoords[0];
-  if (h_x === f_x && h_y === f_x) snakeCoords.unshift([f_x, f_y]);
 }
 
 let nextDirection = "ArrowRight";
@@ -162,12 +165,9 @@ setInterval(() => {
   drawSnake(snakeCoords);
 }, SNAKE_SPEED);
 
-setInterval(() => {
-  generateSnakeFood();
-}, 1000);
-
 function initGame() {
   snakeCoords = getInitialCoordsSnake();
+
   drawGame();
   drawSnake(snakeCoords);
   generateSnakeFood();
