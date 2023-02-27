@@ -1,5 +1,11 @@
 const container = document.getElementById("snake");
+const score = document.getElementById("score");
 
+function showPoints() {
+  score.innerHTML = POINTS + " points";
+}
+
+let POINTS = 0;
 const PIXEL_SIZE = 12;
 let SNAKE_SPEED = 100;
 const grid = {
@@ -27,35 +33,43 @@ let foodCoords = [];
 const moveRight = ([t, l]) => {
   const coords = [t, l + 1];
   if (coords[1] >= grid.COLS) {
-    coords[1] = grid.COLS - 5;
     removeKeyListener();
+    return false;
   }
   return coords;
 };
 const moveLeft = ([t, l]) => {
   const coords = [t, l - 1];
   if (coords[1] < 0) {
-    coords[1] = 4;
     removeKeyListener();
+    return false;
   }
   return coords;
 };
 const moveDown = ([t, l]) => {
   const coords = [t + 1, l];
-  if (coords[0] > grid.ROWS) {
-    coords[0] = grid.ROWS - 4;
+  //verification to not hit the wall when snake is walking in straight line, has to check the direction also
+  if (coords[0] >= grid.ROWS && snakeCoords[0][0] > snakeCoords[1][0]) {
+    console.log(snakeCoords);
     removeKeyListener();
+    return false;
+  } else if (coords[0] < grid.ROWS) {
+    return [t + 1, l];
+  } else {
+    return moveRight([t, l]);
   }
-  return coords;
 };
 const moveUp = ([t, l]) => {
   const coords = [t - 1, l];
-  console.log(l);
-  if (coords[0] < 0) {
-    coords[0] = 4;
+
+  if (coords[0] < 0 && snakeCoords[1][0] > 0) {
     removeKeyListener();
+    return false;
+  } else if (coords[0] > -1) {
+    return [t - 1, l];
+  } else {
+    return moveRight([t, l]);
   }
-  return coords;
 };
 
 function createDiv() {
@@ -71,6 +85,7 @@ function createCell(x, y) {
     top: ${PIXEL_SIZE * x}px;
     left: ${PIXEL_SIZE * y}px;
     border: 0.1px solid #C0C0C0;
+    border-radius: 3px;
   `;
 
   return div;
@@ -98,7 +113,12 @@ function drawSnake(coords) {
   coordinates.forEach((cell, position) => {
     if (uniqueSnakePosition.has(position)) {
       cell.style.background = "yellow";
-    } else {
+    }
+
+    if (
+      !uniqueSnakePosition.has(position) &&
+      cell.style.background !== "green"
+    ) {
       cell.style.background = "white";
     }
   });
@@ -111,7 +131,9 @@ function moveSnake(newHeadPosition) {
     snakeCoords.unshift([f_x, f_y]);
     cell.remove();
     foodCoords = [];
+    POINTS++;
     generateSnakeFood();
+    showPoints();
   } else {
     snakeCoords.unshift(newHeadPosition);
     snakeCoords.pop();
@@ -127,7 +149,6 @@ function generateSnakeFood() {
   cell.style.background = "green";
   container.appendChild(cell);
 
-  console.log(cell);
   foodCoords.push([f_x, f_y, cell]);
 }
 
@@ -140,7 +161,7 @@ function handleKeyPressed(event) {
 let nextDirection = "ArrowRight";
 window.addEventListener("keydown", handleKeyPressed);
 
-setInterval(() => {
+const gameLoop = setInterval(() => {
   var newHeadPosition = snakeCoords[0];
   var nextMove;
 
@@ -161,6 +182,11 @@ setInterval(() => {
       nextMove = moveRight(newHeadPosition);
   }
 
+  if (nextMove === false) {
+    clearInterval(gameLoop);
+    return;
+  }
+
   moveSnake(nextMove);
   drawSnake(snakeCoords);
 }, SNAKE_SPEED);
@@ -171,6 +197,7 @@ function initGame() {
   drawGame();
   drawSnake(snakeCoords);
   generateSnakeFood();
+  showPoints();
 }
 
 function retrivePosition(i, j) {
