@@ -8,8 +8,9 @@ body {
   overflow: hidden;
 }
 
-#snake {
+#board {
   position: relative;
   width: 480px;
   height: 480px;
+  box-sizing: border-box;
 }
