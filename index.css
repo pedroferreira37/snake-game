@@ -8,9 +8,30 @@ body {
   overflow: hidden;
 }
 
+.wrapper {
+  background: rgba(0, 0, 0, 0.1);
+}
+
 #board {
   position: relative;
   width: 480px;
   height: 480px;
   box-sizing: border-box;
+}
+
+.board {
+  background: white;
+  border: 0.1px solid #e7e7e7;
+  border-radius: 2px;
+}
+
+.snake {
+  background: yellow;
+  transition: 0.8s ease linear;
+  border-radius: 2px;
+  box-shadow: 0px 0px 1px 0.8px yellow;
+}
+
+.food {
+  background: greenyellow;
 }
