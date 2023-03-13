@@ -13,7 +13,7 @@ const snakeGame = () => {
       ],
       nextMove: null,
       direction: "ArrowRight",
-      speed: 500,
+      speed: 100,
     },
     food: [],
     points: 0,
@@ -33,6 +33,16 @@ const snakeGame = () => {
   };
 
   return { state };
+};
+
+const idGetter = (props = [] || {}) => {
+  if (Array.isArray(props)) {
+    return props.map(([x, y]) => `${x}_${y}`);
+  }
+
+  if (props instanceof Object) {
+    return `${props.x}_${props.y}`;
+  }
 };
 
 function createElement(props) {
@@ -70,10 +80,8 @@ function removeKeyListener(handleKeyPressed) {
 const checkCollision = ([snake]) => {
   const [head, neck] = snake;
   const [head_x, head_y] = head;
-  const [neck_x] = neck;
-  console.log(head_x, neck_x);
-  if ((head_x <= 0 && neck_x >= 1) || head_x > 40) return true;
-  else if (head_y < 0 || head_y > 40) return true;
+  if (head_x < 0 || head_x >= board.cols || head_y < 0 || head_y >= board.rows)
+    return true;
   else false;
 };
 
@@ -115,8 +123,7 @@ const acceptedMoves = {
       removeKeyListener();
       return false;
     }
-    console.log(Math.max(0, t - 1), l);
-    return [Math.max(0, t - 1), l];
+    return [t - 1, l];
   },
 };
 
@@ -126,6 +133,7 @@ function renderSnake(state) {
   board.coordinates.forEach(([x, y]) => {
     const box = document.getElementById(`${x}_${y}`);
     box?.classList?.remove("snake");
+    box?.classList?.remove("rounded");
   });
 
   snake.coordinates.forEach(([x, y]) => {
@@ -134,47 +142,69 @@ function renderSnake(state) {
   });
 }
 
-function moveSnake(snake) {
-  const snakeHead = snake.nextMove;
-  if (snakeHead) {
-    snake.coordinates.unshift(snakeHead);
-    snake.coordinates.pop();
+function moveSnake(state) {
+  const {
+    snake: { nextMove, coordinates },
+  } = state;
+
+  if (Array.isArray(nextMove)) {
+    coordinates.unshift(nextMove);
+
+    coordinates.pop();
   }
 }
 
 function createRandomFood(state) {
-  const { snake, board } = state;
-  let foodRandomCoordinates = [
-    [
-      Math.floor(Math.random() * board.rows),
-      Math.floor(Math.random() * board.cols),
-    ],
-  ].map(([x, y]) => `${x}-${y}`);
+  const { board } = state;
+  const randomX = Math.floor(Math.random() * board.rows);
+  const randomY = Math.floor(Math.random() * board.cols);
 
-  state.snake.food = foodRandomCoordinates;
+  const foodCoordinates = idGetter([[randomX, randomY]]);
+
+  console.log(foodCoordinates);
 }
 
 function renderFood(state) {
-  const { snake, board } = state;
+  const { board } = state;
+
   board.coordinates.forEach(([x, y]) => {
-    if (snake.food.includes(x) && snake.food.includes(y)) {
-      buildingBlock.classList.add("food");
+    if (state.food?.includes(`${x}_${y}`)) {
+      const food = document.getElementById(`${x}_${y}`);
+      food?.classList?.add("food");
+    } else {
+      const notFood = document.getElementById(`${x}_${y}`);
+      notFood?.classList?.remove("food");
     }
   });
 }
 
 function checkIfFoodWasEaten(state) {
-  const { snake, board } = state;
+  const { snake, food, board } = state;
+
   const tail = [...snake.coordinates.values()].pop();
+
+  const [x, y] = snake.coordinates[0];
+  if (food?.includes(`${x}_${y}`)) {
+    snake.coordinates.unshift([x, y]);
+
+    state = { ...state, snake: { speed: snake.speed-- }, food: [] };
+    createRandomFood(state);
+  }
 }
 
 const { state } = snakeGame();
+
 state.board.createBoard();
+
 renderScreen(state);
+
 renderSnake(state);
+
 createRandomFood(state);
+
 const gameInterval = setInterval(() => {
   const { snake } = state;
+
   if (snake.direction in acceptedMoves) {
     snake.nextMove = acceptedMoves[snake.direction](snake.coordinates);
   }
@@ -185,10 +215,14 @@ const gameInterval = setInterval(() => {
     return;
   }
 
-  moveSnake(snake);
+  moveSnake(state);
+
   renderSnake(state);
-  //renderFood(state);
-}, 100);
+
+  renderFood(state);
+
+  checkIfFoodWasEaten(state);
+}, state.snake.speed);
 
 document.addEventListener("keydown", handleKeyPressed);
 
