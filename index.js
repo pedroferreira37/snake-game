@@ -55,7 +55,7 @@ function createElement(props) {
   div.style.top = `${props.x * props.pixel}px`;
   div.style.left = `${props.y * props.pixel}px`;
   div.setAttribute("class", "board");
-  div.setAttribute("id", `${props.x}_${props.y}`);
+  div.setAttribute("id", idGetter({x: props.x, y: props.y}));
   return div;
 }
 
@@ -64,8 +64,8 @@ function renderScreen(state) {
 
   board.coordinates.forEach(([x, y]) => {
     const props = { x, y, pixel: board.pixel };
-    const buildingBlock = createElement(props);
-    screen.appendChild(buildingBlock);
+    const block = createElement(props);
+    screen.appendChild(block);
   });
 }
 
@@ -96,6 +96,7 @@ const checkCollision = ({ snake: { coordinates }, board, food }) => {
       return true;
     }
   }
+
   if (head_x < 0 || head_x >= board.cols || head_y < 0 || head_y >= board.rows)
     return true;
   else false;
@@ -107,8 +108,8 @@ const acceptedMoves = {
       snake: { coordinates },
       food,
     } = state;
+    
     const [t, l] = coordinates[0];
-
     const isCollide = checkCollision(state);
     const isFoodEaten = checkIfFoodWasEaten(state);
 
@@ -116,7 +117,6 @@ const acceptedMoves = {
       removeKeyListener();
       return false;
     }
-
     return [t, l + 1];
   },
 
@@ -124,8 +124,8 @@ const acceptedMoves = {
     const {
       snake: { coordinates },
     } = state;
+    
     const [t, l] = coordinates[0];
-
     const isCollide = checkCollision(state);
     const isFoodEaten = checkIfFoodWasEaten(state);
 
@@ -133,7 +133,6 @@ const acceptedMoves = {
       removeKeyListener();
       return false;
     }
-
     return [t, l - 1];
   },
 
@@ -141,8 +140,8 @@ const acceptedMoves = {
     const {
       snake: { coordinates },
     } = state;
+    
     const [t, l] = coordinates[0];
-
     const isCollide = checkCollision(state);
     const isFoodEaten = checkIfFoodWasEaten(state);
 
@@ -150,7 +149,6 @@ const acceptedMoves = {
       removeKeyListener();
       return false;
     }
-
     return [t + 1, l];
   },
 
@@ -158,8 +156,8 @@ const acceptedMoves = {
     const {
       snake: { coordinates },
     } = state;
+    
     const [t, l] = coordinates[0];
-
     const isCollide = checkCollision(state);
     const isFoodEaten = checkIfFoodWasEaten(state);
 
@@ -167,7 +165,6 @@ const acceptedMoves = {
       removeKeyListener();
       return false;
     }
-
     return [t - 1, l];
   },
 };
@@ -177,17 +174,13 @@ function renderSnake(state) {
 
   board.coordinates.forEach(([x, y]) => {
     const id = idGetter([x, y]);
-
     const box = document.getElementById(id);
-
     box?.classList?.remove("snake");
   });
 
   snake.coordinates.forEach(([x, y], i) => {
     const id = idGetter([x, y]);
-
     const snake = document.getElementById(id);
-
     snake?.classList?.add("snake");
   });
 }
@@ -199,7 +192,6 @@ function moveSnake(state) {
 
   if (Array.isArray(nextMove)) {
     coordinates.unshift(nextMove);
-
     coordinates.pop();
   }
 }
@@ -221,7 +213,6 @@ function renderFood(state) {
 
   board.coordinates.forEach(([x, y]) => {
     const id = idGetter([x, y]);
-
     if (state.food?.includes(id)) {
       const food = document.getElementById(id);
       food?.classList?.add("food");
@@ -234,9 +225,7 @@ function renderFood(state) {
 
 function checkIfFoodWasEaten(state) {
   const { snake, food, board } = state;
-
   const [food_x, food_y] = food[0].split("_").map((value) => Number(value));
-
   const snakeHead = snake.coordinates[0];
   const id = idGetter(snakeHead);
 
@@ -244,27 +233,21 @@ function checkIfFoodWasEaten(state) {
     food?.includes(id) ||
     (snakeHead[0] === food_x && snakeHead[1] === food_y)
   ) {
+    
     snake.coordinates.unshift(snakeHead);
-
     state = { ...state, snake: { speed: snake.speed - 10 } };
-
     state.food.pop();
-
     createRandomFood(state);
 
     return true;
   }
-
   return false;
 }
 
 function initGame(state) {
   state.board.createBoard();
-
   renderScreen(state);
-
   renderSnake(state);
-
   createRandomFood(state);
 }
 
@@ -330,9 +313,7 @@ function createInterval(state) {
     }
 
     moveSnake(state);
-
     renderSnake(state);
-
     renderFood(state);
   }, state.snake.speed);
 }
