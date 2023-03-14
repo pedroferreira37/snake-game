@@ -208,8 +208,6 @@ function renderFood(state) {
 function checkIfFoodWasEaten(state) {
   const { snake, food, board } = state;
 
-  const tail = [...snake.coordinates.values()].pop();
-
   const snakePiece = snake.coordinates[0];
   const id = idGetter(snakePiece);
 
