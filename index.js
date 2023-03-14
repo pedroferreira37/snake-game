@@ -37,7 +37,8 @@ const snakeGame = () => {
 
 const idGetter = (props = [] || {}) => {
   if (Array.isArray(props)) {
-    return props.map(([x, y]) => `${x}_${y}`);
+    const [x, y] = props;
+    return `${x}_${y}`;
   }
 
   if (props instanceof Object) {
@@ -81,6 +82,7 @@ const checkCollision = ([snake]) => {
   const [head, neck] = snake;
   const [head_x, head_y] = head;
   if (head_x < 0 || head_x >= board.cols || head_y < 0 || head_y >= board.rows)
+    //have to fix it
     return true;
   else false;
 };
@@ -88,41 +90,55 @@ const checkCollision = ([snake]) => {
 const acceptedMoves = {
   ArrowRight(snake) {
     const [t, l] = snake[0];
+
     const isCollide = checkCollision([snake]);
+
     if (isCollide) {
       removeKeyListener();
+
       return false;
     }
+
     return [t, l + 1];
   },
 
   ArrowLeft(snake) {
     const [t, l] = snake[0];
+
     const isCollide = checkCollision([snake]);
+
     if (isCollide) {
       removeKeyListener();
+
       return false;
     }
+
     return [t, l - 1];
   },
 
   ArrowDown(snake) {
     const [t, l] = snake[0];
+
     const isCollide = checkCollision([snake]);
+
     if (isCollide) {
       removeKeyListener();
       return false;
     }
+
     return [t + 1, l];
   },
 
   ArrowUp(snake) {
     const [t, l] = snake[0];
+
     const isCollide = checkCollision([snake]);
+
     if (isCollide) {
       removeKeyListener();
       return false;
     }
+
     return [t - 1, l];
   },
 };
@@ -131,13 +147,20 @@ function renderSnake(state) {
   const { snake, board } = state;
 
   board.coordinates.forEach(([x, y]) => {
-    const box = document.getElementById(`${x}_${y}`);
+    const id = idGetter([x, y]);
+
+    const box = document.getElementById(id);
+
     box?.classList?.remove("snake");
+
     box?.classList?.remove("rounded");
   });
 
   snake.coordinates.forEach(([x, y]) => {
-    const snake = document.getElementById(`${x}_${y}`);
+    const id = idGetter([x, y]);
+
+    const snake = document.getElementById(id);
+
     snake?.classList?.add("snake");
   });
 }
@@ -156,23 +179,27 @@ function moveSnake(state) {
 
 function createRandomFood(state) {
   const { board } = state;
+
   const randomX = Math.floor(Math.random() * board.rows);
   const randomY = Math.floor(Math.random() * board.cols);
 
-  const foodCoordinates = idGetter([[randomX, randomY]]);
+  const randomFood = idGetter([randomX, randomY]);
 
-  console.log(foodCoordinates);
+  state.food.pop();
+  state.food.push(randomFood);
 }
 
 function renderFood(state) {
   const { board } = state;
 
   board.coordinates.forEach(([x, y]) => {
-    if (state.food?.includes(`${x}_${y}`)) {
-      const food = document.getElementById(`${x}_${y}`);
+    const id = idGetter([x, y]);
+
+    if (state.food?.includes(id)) {
+      const food = document.getElementById(id);
       food?.classList?.add("food");
     } else {
-      const notFood = document.getElementById(`${x}_${y}`);
+      const notFood = document.getElementById(id);
       notFood?.classList?.remove("food");
     }
   });
@@ -183,13 +210,28 @@ function checkIfFoodWasEaten(state) {
 
   const tail = [...snake.coordinates.values()].pop();
 
-  const [x, y] = snake.coordinates[0];
-  if (food?.includes(`${x}_${y}`)) {
-    snake.coordinates.unshift([x, y]);
+  const snakePiece = snake.coordinates[0];
+  const id = idGetter(snakePiece);
 
-    state = { ...state, snake: { speed: snake.speed-- }, food: [] };
+  if (food?.includes(id)) {
+    snake.coordinates.unshift(snakePiece);
+
+    state = { ...state, snake: { speed: snake.speed - 10 } };
+
+    state.food.pop();
+
     createRandomFood(state);
   }
+}
+
+function countPoints(state) {
+  const { snake } = state;
+  const sum = snake.coordinates.length - 5;
+  state = { ...state, points: sum };
+
+  state.points > 1
+    ? (score.innerHTML = `${state.points} PONTOS`)
+    : (score.innerHTML = `${state.points} PONTO !`);
 }
 
 const { state } = snakeGame();
@@ -214,7 +256,7 @@ const gameInterval = setInterval(() => {
 
     return;
   }
-
+  countPoints(state);
   moveSnake(state);
 
   renderSnake(state);
@@ -225,41 +267,3 @@ const gameInterval = setInterval(() => {
 }, state.snake.speed);
 
 document.addEventListener("keydown", handleKeyPressed);
-
-// function showPoints() {
-//   score.innerHTML = POINTS + " points";
-// }
-
-//
-
-// function moveSnake(newHeadPosition) {
-//   const [f_x, f_y, cell] = foodCoords[0];
-//   const [s_x, s_y] = newHeadPosition;
-//   if (s_x === f_x && s_y === f_y) {
-//     snakeCoords.unshift([f_x, f_y]);
-//     cell.remove();
-//     foodCoords = [];
-//     POINTS++;
-//     generateSnakeFood();
-//     showPoints();
-//   } else {
-//     snakeCoords.unshift(newHeadPosition);
-//     snakeCoords.pop();
-//   }
-// }
-// function generateSnakeFood() {
-//   let f_x, f_y;
-
-//   f_x = Math.floor(Math.random() * grid.ROWS);
-//   f_y = Math.floor(Math.random() * grid.COLS);
-
-//   const cell = createCell(f_x, f_y);
-//   cell.style.background = "green";
-//   container.appendChild(cell);
-
-//   foodCoords.push([f_x, f_y, cell]);
-// }
-
-//   moveSnake(nextMove);
-//   drawSnake(snakeCoords);
-// }, SNAKE_SPEED);
