@@ -20,7 +20,7 @@ const snakeGame = () => {
     board: {
       rows: 40,
       cols: 40,
-      pixel: 12,
+      pixel: 8,
       coordinates: [],
       createBoard() {
         for (let x = 0; x < this.rows; x++) {
@@ -70,58 +70,83 @@ function renderScreen(state) {
 }
 
 function handleKeyPressed(event) {
+  const key = event.key;
   event.preventDefault();
-  state.snake.direction = event.key;
+
+  if (key === "R" || (key === "r" && state.snake.nextMove === false)) {
+    restartGame();
+  } else {
+    state.snake.direction = key;
+  }
 }
 
 function removeKeyListener(handleKeyPressed) {
   window.removeEventListener("keydown", handleKeyPressed);
 }
 
-const checkCollision = ([snake]) => {
-  const [head, neck] = snake;
+const checkCollision = ({ snake: { coordinates }, board, food }) => {
+  const [head, ...body] = coordinates;
   const [head_x, head_y] = head;
+  const [food_x, food_y] = food.map((axle) =>
+    [...axle.split("_")].map((value) => Number(value))
+  )[0];
+
+  for (const [x, y] of body) {
+    if (x === head_x && y === head_y) {
+      return true;
+    }
+  }
   if (head_x < 0 || head_x >= board.cols || head_y < 0 || head_y >= board.rows)
-    //have to fix it
     return true;
   else false;
 };
 
 const acceptedMoves = {
-  ArrowRight(snake) {
-    const [t, l] = snake[0];
+  ArrowRight(state) {
+    const {
+      snake: { coordinates },
+      food,
+    } = state;
+    const [t, l] = coordinates[0];
 
-    const isCollide = checkCollision([snake]);
+    const isCollide = checkCollision(state);
+    const isFoodEaten = checkIfFoodWasEaten(state);
 
-    if (isCollide) {
+    if (isCollide && !isFoodEaten) {
       removeKeyListener();
-
       return false;
     }
 
     return [t, l + 1];
   },
 
-  ArrowLeft(snake) {
-    const [t, l] = snake[0];
+  ArrowLeft(state) {
+    const {
+      snake: { coordinates },
+    } = state;
+    const [t, l] = coordinates[0];
 
-    const isCollide = checkCollision([snake]);
+    const isCollide = checkCollision(state);
+    const isFoodEaten = checkIfFoodWasEaten(state);
 
-    if (isCollide) {
+    if (isCollide && !isFoodEaten) {
       removeKeyListener();
-
       return false;
     }
 
     return [t, l - 1];
   },
 
-  ArrowDown(snake) {
-    const [t, l] = snake[0];
+  ArrowDown(state) {
+    const {
+      snake: { coordinates },
+    } = state;
+    const [t, l] = coordinates[0];
 
-    const isCollide = checkCollision([snake]);
+    const isCollide = checkCollision(state);
+    const isFoodEaten = checkIfFoodWasEaten(state);
 
-    if (isCollide) {
+    if (isCollide && !isFoodEaten) {
       removeKeyListener();
       return false;
     }
@@ -129,12 +154,16 @@ const acceptedMoves = {
     return [t + 1, l];
   },
 
-  ArrowUp(snake) {
-    const [t, l] = snake[0];
+  ArrowUp(state) {
+    const {
+      snake: { coordinates },
+    } = state;
+    const [t, l] = coordinates[0];
 
-    const isCollide = checkCollision([snake]);
+    const isCollide = checkCollision(state);
+    const isFoodEaten = checkIfFoodWasEaten(state);
 
-    if (isCollide) {
+    if (isCollide && !isFoodEaten) {
       removeKeyListener();
       return false;
     }
@@ -152,11 +181,9 @@ function renderSnake(state) {
     const box = document.getElementById(id);
 
     box?.classList?.remove("snake");
-
-    box?.classList?.remove("rounded");
   });
 
-  snake.coordinates.forEach(([x, y]) => {
+  snake.coordinates.forEach(([x, y], i) => {
     const id = idGetter([x, y]);
 
     const snake = document.getElementById(id);
@@ -208,18 +235,68 @@ function renderFood(state) {
 function checkIfFoodWasEaten(state) {
   const { snake, food, board } = state;
 
-  const snakePiece = snake.coordinates[0];
-  const id = idGetter(snakePiece);
+  const [food_x, food_y] = food[0].split("_").map((value) => Number(value));
 
-  if (food?.includes(id)) {
-    snake.coordinates.unshift(snakePiece);
+  const snakeHead = snake.coordinates[0];
+  const id = idGetter(snakeHead);
+
+  if (
+    food?.includes(id) ||
+    (snakeHead[0] === food_x && snakeHead[1] === food_y)
+  ) {
+    snake.coordinates.unshift(snakeHead);
 
     state = { ...state, snake: { speed: snake.speed - 10 } };
 
     state.food.pop();
 
     createRandomFood(state);
+
+    return true;
   }
+
+  return false;
+}
+
+function initGame(state) {
+  state.board.createBoard();
+
+  renderScreen(state);
+
+  renderSnake(state);
+
+  createRandomFood(state);
+}
+
+function endGame(state) {
+  const text = `You lose with ${state.points}, Press R to restart game!`;
+  const div = document.createElement("div");
+  div.innerHTML = text;
+  score.appendChild(div);
+}
+
+function restartGame() {
+  state = {
+    ...state,
+    food: [],
+    points: 0,
+    snake: {
+      coordinates: [
+        [0, 5],
+        [0, 4],
+        [0, 3],
+        [0, 2],
+        [0, 1],
+      ],
+      direction: "ArrowRight",
+      nextMove: null,
+      speed: 100,
+    },
+  };
+
+  createRandomFood(state);
+  renderSnake(state);
+  createInterval(state);
 }
 
 function countPoints(state) {
@@ -227,41 +304,42 @@ function countPoints(state) {
   const sum = snake.coordinates.length - 5;
   state = { ...state, points: sum };
 
-  state.points > 1
-    ? (score.innerHTML = `${state.points} PONTOS`)
-    : (score.innerHTML = `${state.points} PONTO !`);
-}
-
-const { state } = snakeGame();
-
-state.board.createBoard();
-
-renderScreen(state);
-
-renderSnake(state);
-
-createRandomFood(state);
-
-const gameInterval = setInterval(() => {
-  const { snake } = state;
-
-  if (snake.direction in acceptedMoves) {
-    snake.nextMove = acceptedMoves[snake.direction](snake.coordinates);
-  }
-
-  if (snake.nextMove === false) {
-    clearInterval(gameInterval);
-
+  if (state.snake.nextMove === false) {
+    score.innerHTML = "";
     return;
   }
-  countPoints(state);
-  moveSnake(state);
+  state.points > 1
+    ? (score.innerHTML = `${state.points} Pontos`)
+    : (score.innerHTML = `${state.points} Ponto`);
+}
 
-  renderSnake(state);
+function createInterval(state) {
+  const gameInterval = setInterval(() => {
+    const { snake } = state;
 
-  renderFood(state);
+    if (snake.direction in acceptedMoves) {
+      snake.nextMove = acceptedMoves[snake.direction](state);
+    }
 
-  checkIfFoodWasEaten(state);
-}, state.snake.speed);
+    countPoints(state);
+
+    if (snake.nextMove === false) {
+      clearInterval(gameInterval);
+      endGame(state);
+      return;
+    }
+
+    moveSnake(state);
+
+    renderSnake(state);
+
+    renderFood(state);
+  }, state.snake.speed);
+}
+
+let state = snakeGame().state;
+
+initGame(state);
+createInterval(state);
 
 document.addEventListener("keydown", handleKeyPressed);
